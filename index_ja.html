@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>救急戦略ルーム (ER Command) · TCH ER Command</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #070b10;
+      --surface: #0e141d;
+      --s2: #141c28;
+      --border: #1e2a3a;
+      --bb: #2a3d56;
+      --text: #e7eef7;
+      --muted: #6b7c93;
+      --dim: #475569;
+      --cyan: #4fd1ff;
+      --red: #ff3b4a;
+      --amber: #ffb547;
+      --green: #4ade80;
+      --violet: #a78bfa;
+      --pink: #ff5db1;
+      --grid: rgba(79, 209, 255, .06);
+      --fs: 14px;
+      --fs-num: 46px;
+      --fs-title: 12px;
+      --fs-sub: 11px;
+      --fs-body: 13px;
+    }
+
+    body.font-m {
+      --fs: 16px;
+      --fs-num: 54px;
+      --fs-title: 14px;
+      --fs-sub: 12px;
+      --fs-body: 15px;
+    }
+
+    body.font-l {
+      --fs: 18px;
+      --fs-num: 62px;
+      --fs-title: 16px;
+      --fs-sub: 14px;
+      --fs-body: 17px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+      font-size: var(--fs);
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px), radial-gradient(circle at 20% 0%, rgba(79, 209, 255, .08), transparent 50%), radial-gradient(circle at 80% 100%, rgba(255, 59, 74, .05), transparent 50%);
+      background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      background: repeating-linear-gradient(180deg, transparent 0, transparent 3px, rgba(255, 255, 255, .012) 3px, rgba(255, 255, 255, .012) 4px);
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: "tnum"
+    }
+
+    /* TOPBAR */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(20, 28, 40, .9), rgba(14, 20, 29, .6));
+      flex-wrap: wrap
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .logo {
+      width: 30px;
+      height: 30px;
+      border: 1.5px solid var(--cyan);
+      display: grid;
+      place-items: center;
+      position: relative;
+      box-shadow: inset 0 0 10px rgba(79, 209, 255, .2), 0 0 10px rgba(79, 209, 255, .15);
+      flex-shrink: 0
+    }
+
+    .logo::before,
+    .logo::after {
+      content: "";
+      position: absolute;
+      background: var(--cyan)
+    }
+
+    .logo::before {
+      width: 10px;
+      height: 2px
+    }
+
+    .logo::after {
+      width: 2px;
+      height: 10px
+    }
+
+    .brand-text .t1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: .18em;
+      line-height: 1
+    }
+
+    .brand-text .t2 {
+      font-size: var(--fs-sub);
+      color: var(--muted);
+      letter-spacing: .3em;
+      margin-top: 1px
+    }
+
+    .spacer {
+      flex: 1
+    }
+
+    .live {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid var(--red);
+      color: var(--red);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub);
+      letter-spacing: .2em;
+      background: rgba(255, 59, 74, .08)
+    }
+
+    .live .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: pulse 1.4s ease-in-out infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .4
+      }
+    }
+
+
+    .lang-btn {
+      background: var(--bb);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 12px;
+      margin-right: 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'JetBrains Mono', 'Noto Sans TC', sans-serif;
+    }
+
+    .lang-btn:hover {
+      background: var(--border);
+    }
+
+    .clock {
+
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-body);
+      color: var(--cyan)
+    }
+
+    .clock .label {
+      color: var(--muted);
+      font-size: var(--fs-sub);
+      letter-spacing: .25em;
+      display: block
+    }
+
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub);
+      color: var(--muted);
+      letter-spacing: .15em
+    }
+
+    /* Controls */
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .font-toggle {
+      display: flex;
+      gap: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px
+    }
+
+    .font-toggle button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 8px;
+      cursor: pointer;
+      letter-spacing: .1em
+    }
+
+    .font-toggle button:hover {
+      border-color: var(--bb)
+    }
+
+    .font-toggle button.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(79, 209, 255, .08)
+    }
+
+    /* Time Range Slider */
+    .range-slider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub);
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 4px;
+      z-index: 101;
+    }
+
+    .range-slider .label {
+      letter-spacing: .1em
+    }
+
+    .range-slider input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 160px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      margin: 0
+    }
+
+    .range-slider input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer
+    }
+
+    .range-slider input[type=range]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--cyan);
+      cursor: pointer;
+      border: none
+    }
+
+    .range-slider .val {
+      color: var(--cyan);
+      font-weight: 700;
+      min-width: 40px;
+      text-align: right
+    }
+
+    /* 完美 80 網格佈局 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(80, 1fr);
+      gap: 10px;
+      padding: 12px 16px 16px
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--s2), var(--surface));
+      border: 1px solid var(--border);
+      position: relative;
+      padding: 12px 14px
+    }
+
+    .card::before,
+    .card::after {
+      content: "";
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border: 1.5px solid var(--cyan)
+    }
+
+    .card::before {
+      top: -1px;
+      left: -1px;
+      border-right: none;
+      border-bottom: none
+    }
+
+    .card::after {
+      bottom: -1px;
+      right: -1px;
+      border-left: none;
+      border-top: none
+    }
+
+    .card-h {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px
+    }
+
+    .card-title {
+      font-size: var(--fs-title);
+      color: var(--muted);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    .card-sub {
+      font-size: var(--fs-sub);
+      color: var(--dim);
+      letter-spacing: .1em;
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    /* KPIs */
+    .kpi {
+      grid-column: span 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 95px
+    }
+
+    .kpi .num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: var(--fs-num);
+      line-height: .85
+    }
+
+    .kpi .delta {
+      font-size: var(--fs-sub);
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .bar {
+      height: 2px;
+      background: var(--border);
+      position: relative;
+      margin-top: 6px;
+      overflow: hidden
+    }
+
+    .bar i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      transition: width .6s ease
+    }
+
+    .kpi.total,
+    .kpi.arr,
+    .kpi.bed,
+    .kpi.icu,
+    .kpi.ratio,
+    .kpi.awt,
+    .kpi.awt-bed28,
+    .kpi.awt-icu28 {
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+
+    .kpi.total:hover,
+    .kpi.arr:hover,
+    .kpi.bed:hover,
+    .kpi.icu:hover,
+    .kpi.ratio:hover,
+    .kpi.awt:hover,
+    .kpi.awt-bed28:hover,
+    .kpi.awt-icu28:hover {
+      border-color: var(--bb);
+    }
+
+    .kpi.total .num {
+      color: var(--cyan);
+      text-shadow: 0 0 20px rgba(79, 209, 255, .4)
+    }
+
+    .kpi.total .bar i {
+      background: var(--cyan)
+    }
+
+    .kpi.arr .num {
+      color: var(--green)
+    }
+
+    .kpi.arr .bar i {
+      background: var(--green)
+    }
+
+    .kpi.bed .num {
+      color: var(--amber)
+    }
+
+    .kpi.bed .bar i {
+      background: var(--amber)
+    }
+
+    .kpi.icu .num {
+      color: var(--red)
+    }
+
+    .kpi.icu .bar i {
+      background: var(--red)
+    }
+
+    .kpi.ratio .num {
+      color: var(--violet)
+    }
+
+    .kpi.ratio .bar i {
+      background: var(--violet)
+    }
+
+    .kpi.awt .num {
+      color: var(--pink);
+      font-size: calc(var(--fs-num) * 0.85)
+    }
+
+    .kpi.awt .bar i {
+      background: var(--pink)
+    }
+
+    .kpi.awt-bed28 .num {
+      color: var(--amber);
+      font-size: calc(var(--fs-num) * 0.85)
+    }
+
+    .kpi.awt-bed28 .bar i {
+      background: var(--amber)
+    }
+
+    .kpi.awt-icu28 .num {
+      color: var(--red);
+      font-size: calc(var(--fs-num) * 0.85)
+    }
+
+    .kpi.awt-icu28 .bar i {
+      background: var(--red)
+    }
+
+    /* Info cards */
+    .info {
+      grid-column: span 16;
+      cursor: pointer;
+      transition: border-color .2s;
+      overflow: hidden
+    }
+
+    .info:hover {
+      border-color: var(--bb)
+    }
+
+    .expand-hint {
+      font-size: var(--fs-sub);
+      color: var(--dim);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: right;
+      margin-top: 4px
+    }
+
+    .metric-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-body)
+    }
+
+    .metric-row .label {
+      color: var(--muted);
+      min-width: 48px;
+      font-size: var(--fs-sub)
+    }
+
+    .metric-row .val {
+      color: var(--text);
+      font-weight: 500;
+      min-width: 24px;
+      text-align: right
+    }
+
+    .metric-row .hbar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      position: relative;
+      overflow: hidden;
+      border-radius: 2px
+    }
+
+    .metric-row .hbar i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s
+    }
+
+    .staff-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+      margin-top: 6px
+    }
+
+    .staff-item {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub);
+      padding: 3px 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .staff-item .slabel {
+      color: var(--muted)
+    }
+
+    .staff-item .sval {
+      color: var(--amber)
+    }
+
+    .staff-item .sval.empty {
+      color: var(--dim);
+      font-style: italic
+    }
+
+    /* Charts */
+    .chart-box {
+      grid-column: span 40;
+      height: 280px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer
+    }
+
+    .chart-box:hover {
+      border-color: var(--bb)
+    }
+
+    .chart-box canvas {
+      flex: 1;
+      min-height: 0;
+      max-height: 220px
+    }
+
+    .toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 6px;
+      margin-top: 2px;
+      margin-bottom: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub)
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      user-select: none;
+      white-space: nowrap
+    }
+
+    .toggle:hover {
+      border-color: var(--bb)
+    }
+
+    .toggle input {
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      border: 1px solid currentColor;
+      position: relative;
+      cursor: pointer;
+      margin: 0
+    }
+
+    .toggle input:checked::after {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      background: currentColor
+    }
+
+    .toggle span {
+      color: var(--muted)
+    }
+
+    .toggle.on {
+      border-color: currentColor;
+      background: rgba(255, 255, 255, .03)
+    }
+
+    .toggle.on span {
+      color: currentColor
+    }
+
+    /* BED MAP STYLES */
+    .map-box {
+      grid-column: span 80;
+      margin-top: 6px;
+      padding: 16px 20px;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: var(--fs-sub);
+      margin-top: 4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .map-legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text);
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+
+    .map-legend span::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid transparent;
+      border-radius: 2px;
+    }
+
+    /* 修正重點：利用 .map-legend .l-xxx 來拉高 CSS Specificity，強制覆蓋邊框顏色 */
+    .map-legend .l-empty::before {
+      border-color: var(--border);
+      background: transparent;
+    }
+
+    .map-legend .l-unseen::before {
+      border-color: var(--pink);
+      background: rgba(255, 93, 177, 0.15);
+    }
+
+    .map-legend .l-no::before {
+      border-color: var(--muted);
+      background: rgba(107, 124, 147, 0.25);
+    }
+
+    .map-legend .l-yes::before {
+      border-color: var(--cyan);
+      background: rgba(79, 209, 255, 0.15);
+    }
+
+    .map-legend .l-bed::before {
+      border-color: var(--amber);
+      background: rgba(255, 181, 71, 0.15);
+    }
+
+    .map-legend .l-icu::before {
+      border-color: var(--red);
+      background: rgba(255, 59, 74, 0.15);
+    }
+
+    .map-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      gap: 40px;
+      margin-top: 24px;
+      padding-bottom: 10px;
+      overflow-x: auto;
+    }
+
+    .map-section {
+      min-width: 320px;
+    }
+
+    .map-title {
+      font-size: 14px;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      text-align: center;
+      margin-bottom: 16px;
+      font-family: 'JetBrains Mono', 'Noto Sans TC', sans-serif;
+      font-weight: 500;
+      border-bottom: 1px dashed rgba(79, 209, 255, 0.2);
+      padding-bottom: 6px;
+    }
+
+    /* 診察室+蘇生室 Grid (統一寬度 64px 防擠扁) */
+    .clinic-grid {
+      display: grid;
+      gap: 8px 6px;
+      justify-content: center;
+      grid-template-columns: 80px 36px 64px 64px 64px 64px 64px 64px 80px;
+      grid-template-rows: repeat(9, 32px);
+    }
+
+    /* 観察區 Grid */
+    .obs-grid {
+      display: grid;
+      gap: 6px;
+      justify-content: center;
+      grid-template-columns: repeat(4, 70px);
+      grid-template-rows: repeat(6, 32px);
+    }
+
+    .bed-item {
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 3px;
+      transition: all 0.3s ease;
+      text-align: center;
+      position: relative;
+    }
+
+    .bed-item.tall {
+      writing-mode: vertical-rl;
+      letter-spacing: 2px;
+      font-size: 13px;
+    }
+
+    /* 所有佔ベッド顏色通用樣式 (一般ベッド、虛線框、點點 共用) */
+    .bed-item.occ-unseen,
+    .seq-sub-bed.occ-unseen,
+    .bed-dot.occ-unseen {
+      border-color: var(--pink);
+      background: rgba(255, 93, 177, 0.15);
+      color: var(--pink);
+    }
+
+    .bed-item.occ-no-disp,
+    .seq-sub-bed.occ-no-disp,
+    .bed-dot.occ-no-disp {
+      border-color: var(--muted);
+      background: rgba(107, 124, 147, 0.25);
+      color: #e7eef7;
+    }
+
+    .bed-item.occ-has-disp,
+    .seq-sub-bed.occ-has-disp,
+    .bed-dot.occ-has-disp {
+      border-color: var(--cyan);
+      background: rgba(79, 209, 255, 0.15);
+      color: #e7eef7;
+    }
+
+    .bed-item.occ-wait-bed,
+    .seq-sub-bed.occ-wait-bed,
+    .bed-dot.occ-wait-bed {
+      border-color: var(--amber);
+      background: rgba(255, 181, 71, 0.15);
+      color: var(--amber);
+    }
+
+    .bed-item.occ-wait-icu,
+    .seq-sub-bed.occ-wait-icu,
+    .bed-dot.occ-wait-icu {
+      border-color: var(--red);
+      background: rgba(255, 59, 74, 0.15);
+      color: var(--red);
+    }
+
+    /* 虛線依序填入框 專用外觀 (小児科、産婦科、蘇生室) */
+    .seq-sub-bed {
+      border: 1.5px dashed rgba(107, 124, 147, 0.3);
+      background: transparent;
+      height: 32px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', 'Noto Sans TC', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: transparent;
+      transition: all 0.3s ease;
+      text-align: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      cursor: default;
+    }
+
+    .seq-sub-bed[class*="occ-"] {
+      border-style: solid;
+      color: inherit;
+    }
+
+    .other-beds {
+      margin-top: 24px;
+      border-top: 1px dashed var(--border);
+      padding-top: 16px;
+    }
+
+    .other-beds-title {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.1em;
+    }
+
+    .dot-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .bed-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .bed-dot:hover::after {
+      content: attr(data-info);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      color: var(--text);
+      padding: 4px 8px;
+      border: 1px solid var(--bb);
+      border-radius: 4px;
+      white-space: nowrap;
+      font-size: 11px;
+      margin-bottom: 6px;
+      z-index: 10;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, .8);
+      backdrop-filter: blur(6px);
+      place-items: center
+    }
+
+    .modal-overlay.open {
+      display: grid
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--bb);
+      padding: 24px 28px;
+      max-width: 700px;
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
+      position: relative;
+      transition: max-width 0.3s ease;
+    }
+
+    .modal.w-wide {
+      max-width: 1200px;
+    }
+
+    .modal::before,
+    .modal::after {
+      content: "";
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--cyan)
+    }
+
+    .modal::before {
+      top: -1px;
+      left: -1px;
+      border-right: none;
+      border-bottom: none
+    }
+
+    .modal::after {
+      bottom: -1px;
+      right: -1px;
+      border-left: none;
+      border-top: none
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub);
+      padding: 4px 10px;
+      cursor: pointer
+    }
+
+    .modal-close:hover {
+      border-color: var(--cyan);
+      color: var(--cyan)
+    }
+
+    .modal h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: .1em;
+      color: var(--cyan);
+      margin-bottom: 4px
+    }
+
+    .modal .sub {
+      font-size: var(--fs-sub);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .15em;
+      margin-bottom: 16px
+    }
+
+    /* Modal Charts RWD Wrappers */
+    .modal-chart-wrap {
+      position: relative;
+      width: 100%;
+      height: clamp(220px, 35vh, 320px);
+      margin-top: 16px;
+      overflow: hidden;
+    }
+
+    .modal-chart-wrap.large {
+      height: clamp(400px, 60vh, 700px);
+    }
+
+    .modal-chart-wrap.donut {
+      height: clamp(200px, 30vh, 260px);
+    }
+
+    .modal-chart-wrap canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Ticker */
+    .ticker {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 8px 16px;
+      display: flex;
+      gap: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-sub);
+      color: var(--muted);
+      letter-spacing: .1em;
+      flex-wrap: wrap
+    }
+
+    .ticker b {
+      color: var(--cyan);
+      font-weight: 500
+    }
+
+    /* Responsive */
+    @media(max-width:1400px) {
+      .kpi {
+        grid-column: span 20
+      }
+
+      .info {
+        grid-column: span 26
+      }
+
+      .chart-box {
+        grid-column: span 40
+      }
+    }
+
+    @media(max-width:950px) {
+      .kpi {
+        grid-column: span 40
+      }
+
+      .info {
+        grid-column: span 40
+      }
+
+      .chart-box {
+        grid-column: span 80
+      }
+
+      .topbar .tag {
+        display: none
+      }
+    }
+
+    @media(max-width:600px) {
+      .grid {
+        gap: 14px;
+        padding: 14px
+      }
+
+      .kpi {
+        grid-column: span 40;
+        padding: 16px 14px;
+        min-height: 105px
+      }
+
+      .kpi.total {
+        grid-column: span 80;
+        min-height: 110px;
+        text-align: center;
+        align-items: center;
+        padding: 18px
+      }
+
+      .kpi.total .card-h {
+        justify-content: center;
+        width: 100%
+      }
+
+      .kpi.total .num {
+        font-size: calc(var(--fs-num) * 1.35)
+      }
+
+      .kpi.total .bar {
+        width: 100%
+      }
+
+      .info,
+      .chart-box {
+        grid-column: span 80;
+        padding: 16px 14px
+      }
+
+      .metric-rows {
+        gap: 8px;
+        margin-top: 10px
+      }
+
+      .metric-row {
+        padding: 2px 0;
+      }
+
+      .metric-row .val {
+        font-size: 1.15em;
+      }
+
+      .staff-item {
+        padding: 6px 0;
+      }
+
+      .chart-box {
+        height: 360px
+      }
+
+      .topbar {
+        padding: 10px 14px;
+        gap: 10px
+      }
+
+      .toggle {
+        padding: 6px 10px;
+        font-size: var(--fs-body)
+      }
+
+      .toggles {
+        gap: 8px 10px;
+        margin-bottom: 12px
+      }
+
+      .range-slider input[type=range] {
+        width: 120px
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="brand-text">
+        <div class="t1">救急戦略ルーム (ER Command)</div>
+        <div class="t2">ER COMMAND</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+
+    <div class="controls-group">
+      <div class="range-slider">
+        <span class="label">期間</span>
+        <input type="range" id="global-time-range" min="0" max="5" value="0" step="1"
+          oninput="document.getElementById('global-time-val').textContent=TIME_OPTS[this.value].l"
+          onchange="changeTimeRange(this.value)">
+        <span class="val" id="global-time-val">12H</span>
+      </div>
+
+      <div class="font-toggle">
+        <button onclick="setFont('s')" id="fs-s" class="active">S</button>
+        <button onclick="setFont('m')" id="fs-m">M</button>
+        <button onclick="setFont('l')" id="fs-l">L</button>
+      </div>
+    </div>
+
+    
+    <div class="lang-toggles" style="display:flex; gap:6px; margin-right:15px;">
+      <button class="lang-btn" onclick="switchLang('')">中文</button>
+      <button class="lang-btn" onclick="switchLang('en')">EN</button>
+      <button class="lang-btn" onclick="switchLang('ja')">日本語</button>
+    </div>
+    
+    <div class="clock"><span class="label">SYS</span><span id="clock">--:--:--</span></div>
+    <div class="live"><span class="dot"></span>LIVE</div>
+    <div class="tag">NODE 01</div>
+  </div>
+
+  <div class="grid">
+    <div class="card kpi total" onclick="openModal('total')">
+      <div>
+        <div class="card-title">合計数 <span style="color:var(--dim)">/ 未診</span></div>
+      </div>
+      <div style="width:100%">
+        <div class="num mono" id="k-total">--</div>
+        <div class="delta" id="k-total-d">載入中</div>
+        <div class="bar"><i id="k-total-bar" style="width:0"></i></div>
+      </div>
+    </div>
+    <div class="card kpi arr" onclick="openModal('arrival')">
+      <div>
+        <div class="card-title">每時間來診</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-arr">--</div>
+        <div class="delta">過去60分掛號数</div>
+        <div class="bar"><i id="k-arr-bar" style="width:0"></i></div>
+      </div>
+    </div>
+    <div class="card kpi bed" onclick="openModal('wait')">
+      <div>
+        <div class="card-title">待ベッド</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-bed">--</div>
+        <div class="delta">OA/PA</div>
+        <div class="bar"><i id="k-bed-bar" style="width:0"></i></div>
+      </div>
+    </div>
+    <div class="card kpi icu" onclick="openModal('wait')">
+      <div>
+        <div class="card-title">ICU待ち</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-icu">--</div>
+        <div class="delta">OACU/PACU</div>
+        <div class="bar"><i id="k-icu-bar" style="width:0"></i></div>
+      </div>
+    </div>
+
+    <div class="card kpi ratio" onclick="openModal('dispratio')">
+      <div>
+        <div class="card-title">合計看護師対患者比</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-ratio">--</div>
+        <div class="delta" id="k-ratio-d">--</div>
+        <div class="bar"><i id="k-ratio-bar" style="width:0"></i></div>
+      </div>
+    </div>
+    <div class="card kpi awt" onclick="openModal('curr-wait')">
+      <div>
+        <div class="card-title">現存等ベッド時間</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-awt">--</div>
+        <div class="delta" id="k-awt-d">--</div>
+        <div class="bar"><i id="k-awt-bar" style="width:0"></i></div>
+      </div>
+    </div>
+    <div class="card kpi awt-bed28" onclick="openModal('ext-bed')">
+      <div>
+        <div class="card-title">平均待ベッド</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-awt-bed28">--</div>
+        <div class="delta" id="k-awt-bed28-d">28天 OA/PA 中位数</div>
+        <div class="bar"><i id="k-awt-bed28-bar" style="width:0"></i></div>
+      </div>
+    </div>
+    <div class="card kpi awt-icu28" onclick="openModal('ext-icu')">
+      <div>
+        <div class="card-title">平均ICU待ベッド</div>
+      </div>
+      <div>
+        <div class="num mono" id="k-awt-icu28">--</div>
+        <div class="delta" id="k-awt-icu28-d">28天 OACU/PACU 中位数</div>
+        <div class="bar"><i id="k-awt-icu28-bar" style="width:0"></i></div>
+      </div>
+    </div>
+
+    <div class="card info" onclick="openModal('area')">
+      <div class="card-h">
+        <div class="card-title">區域</div>
+        <div class="card-sub">AREA</div>
+      </div>
+      <div class="metric-rows">
+        <div class="metric-row"><span class="label">蘇生室</span><span class="val" id="a-resus">-</span>
+          <div class="hbar"><i id="a-resus-bar" style="width:0;background:var(--red)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">A ゾーン</span><span class="val" id="a-zoneA">-</span>
+          <div class="hbar"><i id="a-zoneA-bar" style="width:0;background:#6ee7ff"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">B ゾーン</span><span class="val" id="a-zoneB">-</span>
+          <div class="hbar"><i id="a-zoneB-bar" style="width:0;background:#60a5fa"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">観察</span><span class="val" id="a-obs">-</span>
+          <div class="hbar"><i id="a-obs-bar" style="width:0;background:var(--amber)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">小児科</span><span class="val" id="a-peds">-</span>
+          <div class="hbar"><i id="a-peds-bar" style="width:0;background:var(--green)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">産婦科</span><span class="val" id="a-obgyn">-</span>
+          <div class="hbar"><i id="a-obgyn-bar" style="width:0;background:var(--pink)"></i></div>
+        </div>
+      </div>
+      <div class="expand-hint">⊞</div>
+    </div>
+
+    <div class="card info" onclick="openModal('stay')">
+      <div class="card-h">
+        <div class="card-title">滯留</div>
+        <div class="card-sub">STAY</div>
+      </div>
+      <div class="metric-rows">
+        <div class="metric-row"><span class="label">&gt;6h</span><span class="val" id="s-6">-</span>
+          <div class="hbar"><i id="s-6-bar" style="width:0;background:var(--green)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">&gt;12h</span><span class="val" id="s-12">-</span>
+          <div class="hbar"><i id="s-12-bar" style="width:0;background:var(--amber)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">&gt;24h</span><span class="val" id="s-24">-</span>
+          <div class="hbar"><i id="s-24-bar" style="width:0;background:var(--amber)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">&gt;48h</span><span class="val" id="s-48">-</span>
+          <div class="hbar"><i id="s-48-bar" style="width:0;background:var(--red)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">&gt;72h</span><span class="val" id="s-72">-</span>
+          <div class="hbar"><i id="s-72-bar" style="width:0;background:var(--red)"></i></div>
+        </div>
+      </div>
+      <div class="expand-hint">⊞</div>
+    </div>
+
+    <div class="card info" onclick="openModal('dispratio')">
+      <div class="card-h">
+        <div class="card-title">動向</div>
+        <div class="card-sub">DISP</div>
+      </div>
+      <div class="metric-rows">
+        <div class="metric-row"><span class="label">動向なし</span><span class="val" id="d-no"
+            style="color:var(--amber)">-</span>
+          <div class="hbar"><i id="d-no-bar" style="width:0;background:var(--amber)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">動向あり</span><span class="val" id="d-yes"
+            style="color:var(--cyan)">-</span>
+          <div class="hbar"><i id="d-yes-bar" style="width:0;background:var(--cyan)"></i></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:6px">
+        <div class="card-title">ペインインデックス</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--dim)" id="pain">TBD</div>
+      </div>
+      <div class="expand-hint">⊞</div>
+    </div>
+
+    <div class="card info" onclick="openModal('staff')">
+      <div class="card-h">
+        <div class="card-title">力</div>
+        <div class="card-sub">STAFF</div>
+      </div>
+      <div class="staff-grid">
+        <div class="staff-item"><span class="slabel">研修医</span><span class="sval empty" id="st-res">--</span></div>
+        <div class="staff-item"><span class="slabel">主治医</span><span class="sval empty" id="st-att">--</span></div>
+        <div class="staff-item"><span class="slabel">シニア主治医</span><span class="sval empty" id="st-satt">--</span></div>
+        <div class="staff-item"><span class="slabel">専攻医</span><span class="sval empty" id="st-sres">--</span></div>
+        <div class="staff-item"><span class="slabel">看護師</span><span class="sval empty" id="st-nur">--</span></div>
+        <div class="staff-item"><span class="slabel">NP</span><span class="sval empty" id="st-np">--</span></div>
+      </div>
+      <div class="staff-item"
+        style="font-family:'JetBrains Mono',monospace;font-size:var(--fs-sub);padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+        <span class="slabel">小児救急は救急医か</span><span class="sval empty" id="st-peds">--</span>
+      </div>
+      <div class="expand-hint">⊞</div>
+    </div>
+
+    <div class="card info" onclick="openModal('nurseAlloc')">
+      <div class="card-h">
+        <div class="card-title">看護師分配</div>
+        <div class="card-sub">ALLOC</div>
+      </div>
+      <div class="metric-rows">
+        <div class="metric-row"><span class="label">蘇生室</span><span class="val" id="na-er"
+            style="color:var(--red)">-</span>
+          <div class="hbar"><i id="na-er-bar" style="width:0;background:var(--red)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">A ゾーン</span><span class="val" id="na-a" style="color:#6ee7ff">-</span>
+          <div class="hbar"><i id="na-a-bar" style="width:0;background:#6ee7ff"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">B ゾーン</span><span class="val" id="na-b" style="color:#60a5fa">-</span>
+          <div class="hbar"><i id="na-b-bar" style="width:0;background:#60a5fa"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">観察</span><span class="val" style="color:var(--amber)">2</span>
+          <div class="hbar"><i style="width:20%;background:var(--amber)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">小児科</span><span class="val" style="color:var(--green)">1</span>
+          <div class="hbar"><i style="width:10%;background:var(--green)"></i></div>
+        </div>
+        <div class="metric-row"><span class="label">トリアージ</span><span class="val" style="color:var(--muted)">1</span>
+          <div class="hbar"><i style="width:10%;background:var(--muted)"></i></div>
+        </div>
+      </div>
+      <div class="expand-hint">⊞</div>
+    </div>
+
+    <div class="card chart-box" onclick="openChartModal('trend')">
+      <div class="card-h">
+        <div>
+          <div class="card-title">病数トレンド</div>
+        </div>
+        <div class="card-sub" id="trend-range">--</div>
+      </div>
+      <div class="toggles" id="trend-toggles" onclick="event.stopPropagation()"></div>
+      <canvas id="trend"></canvas>
+    </div>
+
+    <div class="card chart-box" onclick="openChartModal('ratio')">
+      <div class="card-h">
+        <div>
+          <div class="card-title">看護師対患者比トレンド</div>
+        </div>
+        <div class="card-sub" id="ratio-range">--</div>
+      </div>
+      <div class="toggles" id="ratio-toggles" onclick="event.stopPropagation()"></div>
+      <canvas id="ratioChart"></canvas>
+    </div>
+
+    <div class="card map-box">
+      <div class="card-h">
+        <div>
+          <div class="card-title">ベッド佔用戰情圖</div>
+        </div>
+        <div class="map-legend">
+          <span class="l-empty">未佔ベッド</span>
+          <span class="l-unseen">未診察</span>
+          <span class="l-no">已看診動向なし</span>
+          <span class="l-yes">退院待ち</span>
+          <span class="l-bed">待ベッド(OA/PA)</span>
+          <span class="l-icu">ICU待ち</span>
+        </div>
+      </div>
+      <div class="map-container">
+        <div class="map-section">
+          <h3 class="map-title">診察室+蘇生室</h3>
+          <div class="clinic-grid">
+            <div class="card"
+              style="grid-column: 1; grid-row: 1 / span 5; display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid var(--border); background: var(--surface);">
+              <div style="font-size: 11px; color: var(--text); text-align: center; font-family: 'Noto Sans TC';">小小児科
+              </div>
+              <div class="seq-sub-bed" id="peds-bed-1"></div>
+              <div class="seq-sub-bed" id="peds-bed-2"></div>
+              <div class="seq-sub-bed" id="peds-bed-3"></div>
+              <div class="seq-sub-bed" id="peds-bed-4"></div>
+              <div class="seq-sub-bed" id="peds-bed-5"></div>
+              <div class="seq-sub-bed" id="peds-bed-6"></div>
+            </div>
+
+            <div class="card"
+              style="grid-column: 1; grid-row: 6 / span 4; display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid var(--border); background: var(--surface);">
+              <div style="font-size: 11px; color: var(--text); text-align: center; font-family: 'Noto Sans TC';">産婦科
+              </div>
+              <div class="seq-sub-bed" id="obgyn-bed-1"></div>
+              <div class="seq-sub-bed" id="obgyn-bed-2"></div>
+              <div class="seq-sub-bed" id="obgyn-bed-3"></div>
+              <div class="seq-sub-bed" id="obgyn-bed-4"></div>
+            </div>
+
+            <div class="bed-item tall" data-bed="葉克膜" style="grid-column: 2; grid-row: 3 / span 2;">葉克膜</div>
+
+            <div class="bed-item" data-bed="B02" style="grid-column: 3; grid-row: 2;">B02</div>
+            <div class="bed-item" data-bed="B01" style="grid-column: 3; grid-row: 4;">B01</div>
+            <div class="bed-item" data-bed="B縫合外" style="grid-column: 3; grid-row: 6;">B縫合外</div>
+
+            <div class="bed-item" data-bed="F柱下" style="grid-column: 5; grid-row: 1;">F柱下</div>
+            <div class="bed-item" data-bed="B13" style="grid-column: 4; grid-row: 2;">B13</div>
+            <div class="bed-item" data-bed="B12" style="grid-column: 4; grid-row: 3;">B12</div>
+            <div class="bed-item" data-bed="B11" style="grid-column: 4; grid-row: 4;">B11</div>
+            <div class="bed-item" data-bed="B10" style="grid-column: 4; grid-row: 5;">B10</div>
+            <div class="bed-item" data-bed="B09" style="grid-column: 4; grid-row: 6;">B09</div>
+            <div class="bed-item" data-bed="B超音波" style="grid-column: 4; grid-row: 7;">B超音波</div>
+
+            <div class="bed-item" data-bed="B08" style="grid-column: 5; grid-row: 2;">B08</div>
+            <div class="bed-item" data-bed="B07" style="grid-column: 5; grid-row: 3;">B07</div>
+            <div class="bed-item" data-bed="B06" style="grid-column: 5; grid-row: 4;">B06</div>
+            <div class="bed-item" data-bed="B05" style="grid-column: 5; grid-row: 5;">B05</div>
+            <div class="bed-item" data-bed="B03" style="grid-column: 5; grid-row: 6;">B03</div>
+
+            <div class="bed-item" data-bed="C柱下" style="grid-column: 7; grid-row: 1;">C柱下</div>
+            <div class="bed-item" data-bed="A12" style="grid-column: 6; grid-row: 2;">A12</div>
+            <div class="bed-item" data-bed="A11" style="grid-column: 6; grid-row: 3;">A11</div>
+            <div class="bed-item" data-bed="A10" style="grid-column: 6; grid-row: 4;">A10</div>
+            <div class="bed-item" data-bed="A09" style="grid-column: 6; grid-row: 5;">A09</div>
+            <div class="bed-item" data-bed="A08" style="grid-column: 6; grid-row: 6;">A08</div>
+
+            <div class="bed-item" data-bed="A07" style="grid-column: 7; grid-row: 2;">A07</div>
+            <div class="bed-item" data-bed="A06" style="grid-column: 7; grid-row: 3;">A06</div>
+            <div class="bed-item" data-bed="A05" style="grid-column: 7; grid-row: 4;">A05</div>
+            <div class="bed-item" data-bed="A03" style="grid-column: 7; grid-row: 5;">A03</div>
+            <div class="bed-item" data-bed="A03-1" style="grid-column: 7; grid-row: 6;">A03-1</div>
+
+            <div class="bed-item" data-bed="A02" style="grid-column: 8; grid-row: 3;">A02</div>
+            <div class="bed-item" data-bed="A01" style="grid-column: 8; grid-row: 5;">A01</div>
+            <div class="bed-item" data-bed="A負壓外" style="grid-column: 8; grid-row: 7;">A負壓外</div>
+
+            <div class="bed-item" data-bed="B衛教單" style="grid-column: 3; grid-row: 8;">B衛教單</div>
+            <div class="bed-item" data-bed="B大圖下" style="grid-column: 4; grid-row: 8;">B大圖下</div>
+            <div class="bed-item" data-bed="A妙手下" style="grid-column: 5; grid-row: 8;">A妙手下</div>
+            <div class="bed-item" data-bed="A佛陀下" style="grid-column: 6; grid-row: 8;">A佛陀下</div>
+            <div class="bed-item" data-bed="A電視下" style="grid-column: 7; grid-row: 8;">A電視下</div>
+
+            <div class="card"
+              style="grid-column: 9; grid-row: 2 / span 7; display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid var(--border); background: var(--surface);">
+              <div style="font-size: 11px; color: var(--text); text-align: center; font-family: 'Noto Sans TC';">蘇生室
+              </div>
+              <div class="seq-sub-bed" id="er-bed-1"></div>
+              <div class="seq-sub-bed" id="er-bed-2"></div>
+              <div class="seq-sub-bed" id="er-bed-3"></div>
+              <div class="seq-sub-bed" id="er-bed-4"></div>
+              <div class="seq-sub-bed" id="er-bed-5"></div>
+              <div class="seq-sub-bed" id="er-bed-6"></div>
+            </div>
+          </div>
+        </div>
+        <div class="map-section">
+          <h3 class="map-title">観察區</h3>
+          <div class="obs-grid">
+            <div class="bed-item" data-bed="C10" style="grid-column: 1; grid-row: 1;">C10</div>
+            <div class="bed-item" data-bed="F10" style="grid-column: 1; grid-row: 2;">F10</div>
+            <div class="bed-item" data-bed="F09" style="grid-column: 1; grid-row: 3;">F09</div>
+            <div class="bed-item" data-bed="F08" style="grid-column: 1; grid-row: 4;">F08</div>
+            <div class="bed-item" data-bed="F07" style="grid-column: 1; grid-row: 5;">F07</div>
+            <div class="bed-item" data-bed="F06" style="grid-column: 1; grid-row: 6;">F06</div>
+            <div class="bed-item" data-bed="F01" style="grid-column: 2; grid-row: 1;">F01</div>
+            <div class="bed-item" data-bed="F02" style="grid-column: 2; grid-row: 2;">F02</div>
+            <div class="bed-item" data-bed="F03" style="grid-column: 2; grid-row: 3;">F03</div>
+            <div class="bed-item" data-bed="F05" style="grid-column: 2; grid-row: 4;">F05</div>
+            <div class="bed-item" data-bed="C01" style="grid-column: 3; grid-row: 1;">C01</div>
+            <div class="bed-item" data-bed="C02" style="grid-column: 3; grid-row: 2;">C02</div>
+            <div class="bed-item" data-bed="C03" style="grid-column: 3; grid-row: 3;">C03</div>
+            <div class="bed-item" data-bed="C05" style="grid-column: 3; grid-row: 4;">C05</div>
+            <div class="bed-item" data-bed="C06" style="grid-column: 4; grid-row: 1;">C06</div>
+            <div class="bed-item" data-bed="C07" style="grid-column: 4; grid-row: 2;">C07</div>
+            <div class="bed-item" data-bed="C08" style="grid-column: 4; grid-row: 3;">C08</div>
+            <div class="bed-item" data-bed="C09" style="grid-column: 4; grid-row: 4;">C09</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="other-beds">
+        <div class="other-beds-title">其他病患 (走道/輪椅/臨時ベッド等未列出ベッド) 游標懸停顯示ベッド號</div>
+        <div class="dot-container" id="other-beds-dots"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ticker">
+    <span>STATUS · <b id="status">CONNECTING</b></span>
+    <span>SYNC · <b id="sync">--</b></span>
+    <span>REC · <b id="rec">--</b></span>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" data-modal-type="" onclick="if(event.target===this)closeModal()">
+    <div class="modal"><button class="modal-close" onclick="closeModal()">ESC ×</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    Chart.defaults.font.family = "'JetBrains Mono',monospace";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = "#6b7c93";
+    Chart.defaults.borderColor = "#1e2a3a";
+    var trendChart, ratioChart, prevTotal = null, latestData = null, allRows = [];
+
+    var TIME_OPTS = [
+      { l: '12H', h: 12 }, { l: '24H', h: 24 }, { l: '3天', h: 72 },
+      { l: '7天', h: 168 }, { l: '14天', h: 336 }, { l: '28天', h: 672 }
+    ];
+    var currentTimeOpt = 0;
+    var extData = { bed: [], icu: [] };
+
+    /* ================= 工具函式 ================= */
+    function p2(n) { return n < 10 ? '0' + n : '' + n }
+
+    function calcArrayStats(arr) {
+      if (!arr || arr.length === 0) return { mean: null, median: null, q1: null, q3: null };
+      arr.sort(function (a, b) { return a - b; });
+      var sum = 0;
+      for (var i = 0; i < arr.length; i++) sum += arr[i];
+      var len = arr.length;
+      var mid = Math.floor(len / 2);
+      var median = len % 2 !== 0 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
+      return { mean: sum / len, median: median, q1: arr[Math.floor(len * 0.25)], q3: arr[Math.floor(len * 0.75)] };
+    }
+
+    function getExtStats(sourceArr, t) {
+      if (!sourceArr || sourceArr.length === 0) return { mean: null, median: null, q1: null, q3: null };
+      var start = t - 28 * 24 * 3600 * 1000;
+      var vals = [];
+      for (var i = 0; i < sourceArr.length; i++) {
+        if (sourceArr[i].t >= start && sourceArr[i].t <= t) { vals.push(sourceArr[i].v); }
+      }
+      return calcArrayStats(vals);
+    }
+
+    function formatHM(mins) {
+      if (mins == null || isNaN(mins)) return '--';
+      var r = Math.round(mins);
+      var h = Math.floor(r / 60);
+      var m = p2(r % 60);
+      return h + 'H' + m + 'M';
+    }
+
+    function setMetric(id, val, max, color) {
+      val = val || 0;
+      var el = document.getElementById(id);
+      if (el) el.textContent = val;
+      var b = document.getElementById(id + '-bar');
+      if (b) { b.style.width = Math.min(100, val / max * 100) + '%'; b.style.background = color }
+    }
+
+    function setNA(id, val, max, color) {
+      var s = val != null ? ((val % 1 === 0) ? val : val.toFixed(1)) : '--';
+      var el = document.getElementById(id);
+      if (el) el.textContent = s;
+      var b = document.getElementById(id + '-bar');
+      if (b) { b.style.width = val != null ? Math.min(100, val / max * 100) + '%' : '0'; b.style.background = color }
+    }
+
+    function setStaff(id, val) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (val !== null && val !== undefined) { el.textContent = val; el.classList.remove('empty') } else { el.textContent = '--'; el.classList.add('empty') }
+    }
+
+    /* ================= UI 連動 ================= */
+    function setFont(sz) {
+      document.body.classList.remove('font-m', 'font-l');
+      if (sz === 'm') document.body.classList.add('font-m');
+      if (sz === 'l') document.body.classList.add('font-l');
+      ['s', 'm', 'l'].forEach(function (s) { document.getElementById('fs-' + s).classList.toggle('active', s === sz) });
+      try { localStorage.setItem('erfs', sz) } catch (e) { }
+    }
+    try { var saved = localStorage.getItem('erfs'); if (saved) setFont(saved) } catch (e) { }
+
+    try {
+      var savedTR = localStorage.getItem('erTimeRange');
+      if (savedTR !== null) {
+        document.getElementById('global-time-range').value = savedTR;
+        currentTimeOpt = parseInt(savedTR);
+        document.getElementById('global-time-val').textContent = TIME_OPTS[currentTimeOpt].l;
+      }
+    } catch (e) { }
+
+    function changeTimeRange(val) {
+      currentTimeOpt = parseInt(val);
+      var gSlider = document.getElementById('global-time-range');
+      if (gSlider && gSlider.value !== val) gSlider.value = val;
+      var gVal = document.getElementById('global-time-val');
+      if (gVal) gVal.textContent = TIME_OPTS[val].l;
+      try { localStorage.setItem('erTimeRange', val) } catch (e) { }
+
+      if (allRows.length > 0) {
+        renderCharts();
+        var modalOverlay = document.getElementById('modal-overlay');
+        var mType = modalOverlay.getAttribute('data-modal-type');
+        if (modalOverlay.classList.contains('open') && mType) {
+          if (mType === 'trend' || mType === 'ratio') openChartModal(mType);
+          else openModal(mType);
+        }
+      }
+    }
+
+    function getFilteredWindow() {
+      if (!allRows || allRows.length === 0) return [];
+      var hrs = TIME_OPTS[currentTimeOpt].h;
+      var lastTs = new Date(allRows[allRows.length - 1].ts).getTime();
+      var cutoff = lastTs - hrs * 3600 * 1000;
+      return allRows.filter(function (r) { return new Date(r.ts).getTime() >= cutoff; });
+    }
+
+    function getLabels(win) {
+      var hrs = TIME_OPTS[currentTimeOpt].h;
+      return win.map(function (r) {
+        var t = new Date(r.ts);
+        if (hrs > 24) return p2(t.getMonth() + 1) + '/' + p2(t.getDate()) + ' ' + p2(t.getHours()) + ':' + p2(t.getMinutes());
+        return p2(t.getHours()) + ':' + p2(t.getMinutes());
+      });
+    }
+
+    /* ================= 圖表配置 ================= */
+    var TREND_LINES = [
+      { key: 'total', label: '合計数', color: '#4fd1ff', width: 2, def: true },
+      { key: 'l12', label: 'L1+L2', color: '#ff3b4a', width: 1.6, def: true },
+      { key: 'l345', label: 'L3+4+5', color: '#fde047', width: 1.6, def: true },
+      { key: 'l1', label: 'L1', color: '#ff6b77', width: 1.2, def: false, dash: [3, 3] },
+      { key: 'l2', label: 'L2', color: '#ffb547', width: 1.2, def: false },
+      { key: 'l3', label: 'L3', color: '#67e8f9', width: 1.2, def: false, dash: [4, 4] },
+      { key: 'l4', label: 'L4', color: '#4ade80', width: 1.2, def: false },
+      { key: 'l5', label: 'L5', color: '#a78bfa', width: 1.2, def: false }
+    ];
+
+    var RATIO_LINES = [
+      { key: 'total', label: '合計看護師対患者比', color: '#ffffff', width: 2.5, def: true },
+      { key: 'clinicER', label: '診察室+急救', color: '#ffb547', width: 1.4, def: false },
+      { key: 'ab', label: 'A/B ゾーン', color: '#ffd88f', width: 1.4, def: false, dash: [6, 3] },
+      { key: 'zoneA', label: 'A ゾーン', color: '#6ee7ff', width: 1.4, def: true },
+      { key: 'zoneB', label: 'B ゾーン', color: '#60a5fa', width: 1.4, def: true },
+      { key: 'resus', label: '蘇生室', color: '#ff3b4a', width: 1.4, def: true },
+      { key: 'obs', label: '観察', color: '#ff5db1', width: 1.4, def: true },
+      { key: 'peds', label: '小児科', color: '#4ade80', width: 1.4, def: true },
+      { key: 'noDisp', label: '動向なし', color: '#a78bfa', width: 1.4, def: false, dash: [4, 4] },
+      { key: 'hasDisp', label: '動向あり', color: '#fb923c', width: 1.4, def: false, dash: [4, 4] }
+    ];
+
+    function buildToggles(cid, lines, onChange, srcChart) {
+      var el = document.getElementById(cid);
+      el.innerHTML = lines.map(function (l, i) {
+        var isOn = srcChart ? !srcChart.data.datasets[i].hidden : l.def;
+        return '<label class="toggle ' + (isOn ? 'on' : '') + '" style="color:' + l.color + '"><input type="checkbox" ' + (isOn ? 'checked' : '') + ' data-idx="' + i + '"><span>' + l.label + '</span></label>';
+      }).join('');
+      el.querySelectorAll('input').forEach(function (cb) { cb.addEventListener('change', function () { this.closest('.toggle').classList.toggle('on', this.checked); onChange() }) });
+    }
+
+    function syncVis(cid, chart, lines) {
+      lines.forEach(function (l, i) { chart.data.datasets[i].hidden = !document.querySelector('#' + cid + ' input[data-idx="' + i + '"]').checked });
+      chart.update('none');
+    }
+
+    function initCharts() {
+      var mkDS = function (lines) { return lines.map(function (l) { return { label: l.label, data: [], borderColor: l.color, backgroundColor: 'transparent', fill: false, tension: .35, pointRadius: 0, borderWidth: l.width, borderDash: l.dash || [], hidden: !l.def, spanGaps: true } }) };
+      var opts = function (ytitle) { return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0e141d', borderColor: '#2a3d56', borderWidth: 1, padding: 10, cornerRadius: 2 } }, scales: { x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 10 } }, y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true, title: ytitle ? { display: true, text: ytitle, color: '#6b7c93', font: { size: 10 } } : undefined } } } };
+
+      trendChart = new Chart(document.getElementById('trend'), { type: 'line', data: { labels: [], datasets: mkDS(TREND_LINES) }, options: opts() });
+      ratioChart = new Chart(document.getElementById('ratioChart'), { type: 'line', data: { labels: [], datasets: mkDS(RATIO_LINES) }, options: opts('病:看護師') });
+
+      buildToggles('trend-toggles', TREND_LINES, function () { syncVis('trend-toggles', trendChart, TREND_LINES) });
+      buildToggles('ratio-toggles', RATIO_LINES, function () { syncVis('ratio-toggles', ratioChart, RATIO_LINES) });
+    }
+
+    /* ================= 核心邏輯 ================= */
+    function computePainIndex(r) {
+      if (!r) return { score: 0, env: 0, team: 0 };
+      var d = r.details || {};
+      if (d.painIndex && d.painIndex.score != null && d.painIndex.team != null) return d.painIndex;
+
+      var arr = d.arrival || 0;
+      var unseen = d.unseen || 0;
+      var resus = d.area ? (d.area.resus || 0) : 0;
+      var noDisp = d.disp ? (d.disp.noDisp || 0) : 0;
+      var waitBed = d.wait ? (d.wait.bed || 0) : 0;
+      var waitICU = d.wait ? (d.wait.icu || 0) : 0;
+      var gt24 = d.stay ? (d.stay.gt24 || 0) : 0;
+      var gt48 = d.stay ? (d.stay.gt48 || 0) : 0;
+      var gt72 = d.stay ? (d.stay.gt72 || 0) : 0;
+
+      var s = d.staff || {};
+      var pEnv = (arr * 2) + (unseen * 3) + (resus * 10) + (noDisp * 1) +
+        (waitBed * 2) + (waitICU * 5) + (gt24 * 3) + (gt48 * 5) + (gt72 * 10);
+      var pTeam = ((s.attending || 0) * 10) + ((s.resident || 0) * 5) +
+        ((s.seniorResident || 0) * 10) + ((s.np || 0) * 5) + ((s.nurse || 0) * 2) - ((s.seniorAttending || 0) * 5);
+
+      var pScore = pEnv - pTeam;
+      if (pScore < 0) pScore = 0;
+
+      return { score: pScore, env: pEnv, team: pTeam };
+    }
+
+    function load() {
+      google.script.run.withSuccessHandler(render).withFailureHandler(function (e) { document.getElementById('status').textContent = 'ERROR' }).getStats();
+      google.script.run.withSuccessHandler(renderMedians).getMedians();
+    }
+
+    function renderMedians(res) {
+      try {
+        if (!res) return;
+        extData = res;
+        var now = new Date().getTime();
+
+        var bedStats28 = getExtStats(extData.bed, now);
+        var icuStats28 = getExtStats(extData.icu, now);
+
+        document.getElementById('k-awt-bed28').textContent = formatHM(bedStats28.median);
+        document.getElementById('k-awt-bed28-bar').style.width = bedStats28.median ? Math.min(100, bedStats28.median / 2880 * 100) + '%' : '0%';
+
+        document.getElementById('k-awt-icu28').textContent = formatHM(icuStats28.median);
+        document.getElementById('k-awt-icu28-bar').style.width = icuStats28.median ? Math.min(100, icuStats28.median / 2880 * 100) + '%' : '0%';
+      } catch (e) { console.error('renderMedians Error:', e); }
+    }
+
+    // 繪製ベッド圖
+    function renderBedMap(bedList) {
+      if (!bedList) return;
+
+      // 現在の状態をクリア
+      document.querySelectorAll('.bed-item, .seq-sub-bed').forEach(function (el) {
+        el.className = el.className.replace(/occ-\S+/g, '').trim();
+        el.removeAttribute('title');
+        if (el.classList.contains('seq-sub-bed')) {
+          el.textContent = '';
+        }
+      });
+
+      var otherBedsHTML = '';
+      // 優先L：ICU待ち > 待ベッド > 退院待ち > 未診察 > 動向なし
+      var prio = { 'wait-icu': 5, 'wait-bed': 4, 'has-disp': 3, 'unseen': 2, 'no-disp': 1 };
+      var bedStatusMap = {};
+      var bedPatientsMap = {};
+
+      var erPatients = [];
+      var pedsPatients = [];
+      var obgynPatients = [];
+
+      // 1. 分類與收集資料
+      bedList.forEach(function (b) {
+        if (b.isERPatient) { erPatients.push(b); return; }
+        if (b.isPedsPatient) { pedsPatients.push(b); return; }
+        if (b.isObgynPatient) { obgynPatients.push(b); return; }
+
+        // 一般固定命名ベッド (ECMOを含む)
+        var id = b.id;
+        if (!bedPatientsMap[id]) bedPatientsMap[id] = [];
+        bedPatientsMap[id].push(b);
+
+        if (!bedStatusMap[id]) {
+          bedStatusMap[id] = b.status;
+        } else {
+          if (prio[b.status] > prio[bedStatusMap[id]]) {
+            bedStatusMap[id] = b.status;
+          }
+        }
+      });
+
+      // 2. 套用一般命名ベッド狀態
+      Object.keys(bedStatusMap).forEach(function (id) {
+        var statusCls = 'occ-' + bedStatusMap[id];
+        var pts = bedPatientsMap[id];
+        var infoText = id + (pts.length > 1 ? ' (' + pts.length + ')' : '');
+
+        var el = document.querySelector('.bed-item[data-bed="' + id + '"]');
+        if (el) {
+          el.classList.add(statusCls);
+          el.setAttribute('title', infoText);
+        } else {
+          // マップ外のベッドは下の点になります
+          otherBedsHTML += '<div class="bed-dot ' + statusCls + '" data-info="' + infoText + '"></div>';
+        }
+      });
+
+      // 3. 順次点灯ロジック (給急救、小児科、産婦科使用)
+      function fillSequentialBoxes(patientList, prefix, maxSlots) {
+        var statusMap = {};
+        var ptsMap = {};
+
+        patientList.forEach(function (b) {
+          var id = b.id || '無名';
+          if (!ptsMap[id]) ptsMap[id] = [];
+          ptsMap[id].push(b);
+
+          if (!statusMap[id]) {
+            statusMap[id] = b.status;
+          } else {
+            if (prio[b.status] > prio[statusMap[id]]) {
+              statusMap[id] = b.status;
+            }
+          }
+        });
+
+        var keys = Object.keys(statusMap);
+        for (var i = 0; i < keys.length; i++) {
+          var id = keys[i];
+          var statusCls = 'occ-' + statusMap[id];
+          var pts = ptsMap[id];
+          var infoText = id + (pts.length > 1 ? ' (' + pts.length + ')' : '');
+
+          if (i < maxSlots) {
+            var el = document.getElementById(prefix + '-bed-' + (i + 1));
+            if (el) {
+              el.classList.add(statusCls);
+              el.setAttribute('title', infoText);
+              el.textContent = id;
+            }
+          } else {
+            otherBedsHTML += '<div class="bed-dot ' + statusCls + '" data-info="' + infoText + '"></div>';
+          }
+        }
+      }
+
+      fillSequentialBoxes(erPatients, 'er', 6);
+      fillSequentialBoxes(pedsPatients, 'peds', 6);
+      fillSequentialBoxes(obgynPatients, 'obgyn', 4);
+
+      document.getElementById('other-beds-dots').innerHTML = otherBedsHTML;
+    }
+
+    function render(rows) {
+      if (!rows || !rows.length) { document.getElementById('status').textContent = 'NO DATA'; return }
+      allRows = rows; document.getElementById('status').textContent = 'OK'; document.getElementById('rec').textContent = rows.length;
+
+      var L = rows[rows.length - 1]; latestData = L;
+      var d = L.details || {};
+      var stay = d.stay || {};
+      var area = d.area || {};
+      var wait = d.wait || {};
+      var staff = d.staff || {};
+      var ratio = d.ratio || {};
+      var disp = d.disp || {};
+      var na = d.nurseAlloc || {};
+      var bedList = d.bedList || [];
+
+      try {
+        var unseenCount = d.unseen || 0;
+        document.getElementById('k-total').innerHTML = L.total + '<span style="font-size:0.55em;color:var(--muted);margin-left:8px">/ ' + unseenCount + '</span>';
+        document.getElementById('k-total-bar').style.width = Math.min(100, L.total / 80 * 100) + '%';
+        if (prevTotal !== null) { var dd = L.total - prevTotal; document.getElementById('k-total-d').textContent = 'Δ ' + (dd >= 0 ? '+' : '') + dd }
+        else document.getElementById('k-total-d').textContent = '--';
+        prevTotal = L.total;
+      } catch (e) { console.error('KPI Total Error:', e); }
+
+      try {
+        var arrVal = d.arrival || 0;
+        document.getElementById('k-arr').textContent = arrVal;
+        document.getElementById('k-arr-bar').style.width = Math.min(100, arrVal / 30 * 100) + '%';
+      } catch (e) { console.error('KPI Arrival Error:', e); }
+
+      try {
+        document.getElementById('k-bed').textContent = wait.bed || 0;
+        document.getElementById('k-bed-bar').style.width = Math.min(100, (wait.bed || 0) / Math.max(L.total, 1) * 100) + '%';
+        document.getElementById('k-icu').textContent = wait.icu || 0;
+        document.getElementById('k-icu-bar').style.width = Math.min(100, (wait.icu || 0) / 10 * 100) + '%';
+      } catch (e) { console.error('KPI Wait Count Error:', e); }
+
+      try {
+        var rt = ratio.total;
+        document.getElementById('k-ratio').textContent = rt != null ? rt.toFixed(1) : 'N/A';
+        document.getElementById('k-ratio-bar').style.width = rt != null ? Math.min(100, rt / 8 * 100) + '%' : '0';
+        document.getElementById('k-ratio-d').textContent = staff.nurse != null ? (L.total + '/' + staff.nurse + '') : '--';
+      } catch (e) { console.error('KPI Ratio Error:', e); }
+
+      try {
+        var awStats = wait.stats ? wait.stats : { median: wait.avgMin };
+        if (awStats.median != null) {
+          var awRounded = Math.round(awStats.median);
+          var h = Math.floor(awRounded / 60), m = awRounded % 60;
+          document.getElementById('k-awt').textContent = h + 'H' + p2(m) + 'M';
+          document.getElementById('k-awt-bar').style.width = Math.min(100, awRounded / 1440 * 100) + '%';
+          document.getElementById('k-awt-d').textContent = (wait.bed || 0) + (wait.icu || 0) + ' 等ベッド中位数';
+        } else {
+          document.getElementById('k-awt').textContent = '--';
+          document.getElementById('k-awt-d').textContent = '無等ベッド';
+        }
+      } catch (e) { console.error('KPI AWT Error:', e); }
+
+      try {
+        var amax = Math.max(area.resus || 0, area.obs || 0, area.peds || 0, area.obgyn || 0, area.zoneA || 0, area.zoneB || 0, 1);
+        setMetric('a-resus', area.resus, amax, 'var(--red)');
+        setMetric('a-zoneA', area.zoneA, amax, '#6ee7ff');
+        setMetric('a-zoneB', area.zoneB, amax, '#60a5fa');
+        setMetric('a-obs', area.obs, amax, 'var(--amber)');
+        setMetric('a-peds', area.peds, amax, 'var(--green)');
+        setMetric('a-obgyn', area.obgyn, amax, 'var(--pink)');
+      } catch (e) { console.error('Area Error:', e); }
+
+      try {
+        var namax = Math.max(na.total || 1, 1);
+        setNA('na-er', na.resus, namax, 'var(--red)');
+        setNA('na-a', na.zoneA, namax, '#6ee7ff');
+        setNA('na-b', na.zoneB, namax, '#60a5fa');
+      } catch (e) { console.error('Nurse Alloc Error:', e); }
+
+      try {
+        var smax = Math.max(stay.gt6 || 0, 1);
+        setMetric('s-6', stay.gt6, smax, 'var(--green)');
+        setMetric('s-12', stay.gt12, smax, 'var(--amber)');
+        setMetric('s-24', stay.gt24, smax, 'var(--amber)');
+        setMetric('s-48', stay.gt48, smax, 'var(--red)');
+        setMetric('s-72', stay.gt72, smax, 'var(--red)');
+      } catch (e) { console.error('Stay Error:', e); }
+
+      try {
+        setMetric('d-no', disp.noDisp, L.total || 1, 'var(--amber)');
+        setMetric('d-yes', disp.hasDisp, L.total || 1, 'var(--cyan)');
+      } catch (e) { console.error('Disp Error:', e); }
+
+      try {
+        setStaff('st-res', staff.resident);
+        setStaff('st-att', staff.attending);
+        setStaff('st-satt', staff.seniorAttending);
+        setStaff('st-sres', staff.seniorResident);
+        setStaff('st-nur', staff.nurse);
+        setStaff('st-np', staff.np);
+        setStaff('st-peds', staff.pedsIsER);
+      } catch (e) { console.error('Staff Error:', e); }
+
+      try {
+        var painIdx = computePainIndex(L);
+        var painEl = document.getElementById('pain');
+        if (painEl) {
+          if (painIdx && painIdx.score != null) {
+            var teamStr = painIdx.team >= 0 ? '-' + painIdx.team : '+' + (-painIdx.team);
+            painEl.innerHTML = painIdx.score + '<span style="font-size:12px;font-family:\'Noto Sans TC\';color:var(--muted);margin-left:8px;letter-spacing:0.05em;font-weight:400;">(環境 +' + painIdx.env + ' / チーム ' + teamStr + ')</span>';
+            if (painIdx.score < 40) painEl.style.color = 'var(--green)';
+            else if (painIdx.score < 70) painEl.style.color = 'var(--amber)';
+            else if (painIdx.score < 100) painEl.style.color = 'var(--red)';
+            else painEl.style.color = 'var(--violet)';
+          } else {
+            painEl.textContent = 'TBD';
+            painEl.style.color = 'var(--dim)';
+          }
+        }
+      } catch (e) { console.error('Pain Index Error:', e); }
+
+      try {
+        renderCharts();
+        renderBedMap(bedList);
+      } catch (e) { console.error('Render Charts/Map Error:', e); }
+
+      document.getElementById('sync').textContent = new Date(L.ts).toTimeString().slice(0, 8);
+    }
+
+    function renderCharts() {
+      if (!allRows || allRows.length === 0) return;
+      var win = getFilteredWindow();
+      var labels = getLabels(win);
+
+      trendChart.data.labels = labels;
+      trendChart.data.datasets[0].data = win.map(function (r) { return r.total });
+      trendChart.data.datasets[1].data = win.map(function (r) { return (r.l1 || 0) + (r.l2 || 0) });
+      trendChart.data.datasets[2].data = win.map(function (r) { return (r.l3 || 0) + (r.l4 || 0) + (r.l5 || 0) });
+      trendChart.data.datasets[3].data = win.map(function (r) { return r.l1 });
+      trendChart.data.datasets[4].data = win.map(function (r) { return r.l2 });
+      trendChart.data.datasets[5].data = win.map(function (r) { return r.l3 });
+      trendChart.data.datasets[6].data = win.map(function (r) { return r.l4 });
+      trendChart.data.datasets[7].data = win.map(function (r) { return r.l5 });
+      trendChart.update('none');
+      document.getElementById('trend-range').textContent = win.length + ' pts';
+
+      var R = function (r) { return r.details && r.details.ratio ? r.details.ratio : {} };
+      ratioChart.data.labels = labels;
+      ratioChart.data.datasets[0].data = win.map(function (r) { var v = R(r).total; return v != null ? v : null });
+      ratioChart.data.datasets[1].data = win.map(function (r) { var v = R(r).clinicER; return v != null ? v : null });
+      ratioChart.data.datasets[2].data = win.map(function (r) { var v = R(r).ab; return v != null ? v : null });
+      ratioChart.data.datasets[3].data = win.map(function (r) { var v = R(r).zoneA; return v != null ? v : null });
+      ratioChart.data.datasets[4].data = win.map(function (r) { var v = R(r).zoneB; return v != null ? v : null });
+      ratioChart.data.datasets[5].data = win.map(function (r) { var v = R(r).resus; return v != null ? v : 0 });
+      ratioChart.data.datasets[6].data = win.map(function (r) { var v = R(r).obs; return v != null ? v : null });
+      ratioChart.data.datasets[7].data = win.map(function (r) { var v = R(r).peds; return v != null ? v : null });
+      ratioChart.data.datasets[8].data = win.map(function (r) { var v = R(r).noDisp; return v != null ? v : null });
+      ratioChart.data.datasets[9].data = win.map(function (r) { var v = R(r).hasDisp; return v != null ? v : null });
+      ratioChart.update('none');
+      document.getElementById('ratio-range').textContent = win.length + ' pts';
+    }
+
+    /* ================= モーダル ================= */
+    function openChartModal(type) {
+      document.getElementById('modal-overlay').setAttribute('data-modal-type', type);
+      var body = document.getElementById('modal-body');
+      var isTrend = type === 'trend';
+      var html = '<h2>' + (isTrend ? '病数トレンド' : '看護師対患者比トレンド') + '</h2><div class="sub">EXPANDED VIEW</div>';
+
+      html += '<div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">';
+      html += '<div class="range-slider" style="margin:0"><span class="label">期間</span><input type="range" min="0" max="5" value="' + currentTimeOpt + '" oninput="document.getElementById(\'m-time-val\').textContent=TIME_OPTS[this.value].l" onchange="changeTimeRange(this.value)"><span class="val" id="m-time-val">' + TIME_OPTS[currentTimeOpt].l + '</span></div>';
+      html += '<div class="toggles" id="modal-toggles" style="margin:0"></div>';
+      html += '</div>';
+
+      html += '<div class="modal-chart-wrap large"><canvas id="modal-big-chart"></canvas></div>';
+
+      body.innerHTML = html;
+      var modalDom = document.querySelector('.modal');
+      modalDom.classList.add('w-wide');
+      document.getElementById('modal-overlay').classList.add('open');
+
+      setTimeout(function () {
+        var win = getFilteredWindow();
+        var labels = getLabels(win);
+        var datasets = [];
+        var srcChart = isTrend ? trendChart : ratioChart;
+        var lines = isTrend ? TREND_LINES : RATIO_LINES;
+
+        if (isTrend) {
+          datasets = TREND_LINES.map(function (l, i) {
+            var data = [];
+            if (l.key === 'total') data = win.map(function (r) { return r.total });
+            if (l.key === 'l12') data = win.map(function (r) { return (r.l1 || 0) + (r.l2 || 0) });
+            if (l.key === 'l345') data = win.map(function (r) { return (r.l3 || 0) + (r.l4 || 0) + (r.l5 || 0) });
+            if (l.key === 'l1') data = win.map(function (r) { return r.l1 });
+            if (l.key === 'l2') data = win.map(function (r) { return r.l2 });
+            if (l.key === 'l3') data = win.map(function (r) { return r.l3 });
+            if (l.key === 'l4') data = win.map(function (r) { return r.l4 });
+            if (l.key === 'l5') data = win.map(function (r) { return r.l5 });
+            return { label: l.label, data: data, borderColor: l.color, backgroundColor: 'transparent', fill: false, tension: .35, pointRadius: 0, borderWidth: l.width, borderDash: l.dash || [], hidden: srcChart.data.datasets[i].hidden, spanGaps: true };
+          });
+        } else {
+          var R = function (r) { return r.details && r.details.ratio ? r.details.ratio : {} };
+          datasets = RATIO_LINES.map(function (l, i) {
+            var data = win.map(function (r) {
+              var v = R(r)[l.key];
+              if (l.key === 'resus') return v != null ? v : 0;
+              return v != null ? v : null;
+            });
+            return { label: l.label, data: data, borderColor: l.color, backgroundColor: 'transparent', fill: false, tension: .35, pointRadius: 0, borderWidth: l.width, borderDash: l.dash || [], hidden: srcChart.data.datasets[i].hidden, spanGaps: true };
+          });
+        }
+
+        var canvas = document.getElementById('modal-big-chart');
+        var modalBigChart = new Chart(canvas, {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: true, labels: { color: '#e7eef7', boxWidth: 8, font: { size: 11 } } }, tooltip: { backgroundColor: '#0e141d', borderColor: '#2a3d56', borderWidth: 1, padding: 10 } },
+            scales: {
+              x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 15 } },
+              y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true }
+            }
+          }
+        });
+
+        buildToggles('modal-toggles', lines, function () {
+          syncVis('modal-toggles', modalBigChart, lines);
+        }, srcChart);
+
+      }, 100);
+    }
+
+    function openModal(type) {
+      document.getElementById('modal-overlay').setAttribute('data-modal-type', type);
+      var body = document.getElementById('modal-body'), L = latestData;
+      if (!L) { body.innerHTML = '<p>データなし</p>'; document.getElementById('modal-overlay').classList.add('open'); return }
+      var d = L.details || {}, html = '';
+
+      var modalDom = document.querySelector('.modal');
+      if (type === 'curr-wait' || type === 'ext-bed' || type === 'ext-icu' || type === 'arrival' || type === 'wait' || type === 'total') {
+        modalDom.classList.add('w-wide');
+      } else {
+        modalDom.classList.remove('w-wide');
+      }
+
+      if (type === 'arrival') {
+        html = '<h2>每時間受付数トレンド</h2><div class="sub">HOURLY ARRIVAL VOLUME TREND (PAST 60 MINS WINDOW)</div>';
+        html += '<div class="range-slider" style="margin-bottom:12px; display:inline-flex"><span class="label">期間</span><input type="range" min="0" max="5" value="' + currentTimeOpt + '" oninput="document.getElementById(\'m-time-val\').textContent=TIME_OPTS[this.value].l" onchange="changeTimeRange(this.value)"><span class="val" id="m-time-val">' + TIME_OPTS[currentTimeOpt].l + '</span></div>';
+        html += '<div class="modal-chart-wrap large"><canvas id="modal-chart"></canvas></div>';
+
+        body.innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('open');
+
+        setTimeout(function () {
+          var win = getFilteredWindow();
+          var lb = getLabels(win);
+          var arrData = win.map(function (r) { return r.details && r.details.arrival != null ? r.details.arrival : 0; });
+
+          new Chart(document.getElementById('modal-chart'), {
+            type: 'line',
+            data: {
+              labels: lb,
+              datasets: [{
+                label: '過去 60 分來診数',
+                data: arrData,
+                borderColor: '#4ade80',
+                backgroundColor: 'rgba(74,222,128,0.05)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: 0,
+                borderWidth: 2,
+                spanGaps: true
+              }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+              plugins: { legend: { display: true, labels: { color: '#e7eef7', boxWidth: 12, font: { size: 12 } } } },
+              scales: { x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 15 } }, y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true } }
+            }
+          });
+        }, 100);
+        return;
+      }
+
+      if (type === 'wait') {
+        html = '<h2>待ベッド / ICU待ちトレンド (数)</h2><div class="sub">WAITING FOR BED / ICU TREND (HEADCOUNT)</div>';
+        html += '<div class="range-slider" style="margin-bottom:12px; display:inline-flex"><span class="label">期間</span><input type="range" min="0" max="5" value="' + currentTimeOpt + '" oninput="document.getElementById(\'m-time-val\').textContent=TIME_OPTS[this.value].l" onchange="changeTimeRange(this.value)"><span class="val" id="m-time-val">' + TIME_OPTS[currentTimeOpt].l + '</span></div>';
+        html += '<div class="modal-chart-wrap large"><canvas id="modal-chart"></canvas></div>';
+
+        body.innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('open');
+
+        setTimeout(function () {
+          var win = getFilteredWindow();
+          var lb = getLabels(win);
+          new Chart(document.getElementById('modal-chart'), {
+            type: 'line',
+            data: {
+              labels: lb,
+              datasets: [
+                { label: '待ベッド (OA/PA)', data: win.map(function (r) { return r.details && r.details.wait ? r.details.wait.bed || 0 : 0 }), borderColor: '#ffb547', fill: false, tension: .35, pointRadius: 0, borderWidth: 2, spanGaps: true },
+                { label: 'ICU待ち (OACU/PACU)', data: win.map(function (r) { return r.details && r.details.wait ? r.details.wait.icu || 0 : 0 }), borderColor: '#ff3b4a', fill: false, tension: .35, pointRadius: 0, borderWidth: 2, spanGaps: true }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+              plugins: { legend: { display: true, labels: { color: '#e7eef7', font: { size: 12 } } } },
+              scales: {
+                x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 15 } },
+                y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true }
+              }
+            }
+          });
+        }, 100);
+        return;
+      }
+
+      if (type === 'curr-wait' || type === 'ext-bed' || type === 'ext-icu') {
+        var title = '', sub = '';
+        var latestStats = { mean: null, median: null, q1: null, q3: null };
+        var datasets = [];
+        var pointBgColor = '#ffb547';
+
+        var win = getFilteredWindow();
+        var lb = getLabels(win);
+        var meanData = [], q1Data = [], medData = [], q3Data = [];
+
+        if (type === 'curr-wait') {
+          title = '現存等ベッド時間分析'; sub = 'CURRENT WAITING TIME SNAPSHOT & TREND';
+          pointBgColor = '#ff5db1';
+          latestStats = L.details && L.details.wait && L.details.wait.stats ? L.details.wait.stats : { mean: null, median: (L.details && L.details.wait ? L.details.wait.avgMin : null), q1: null, q3: null };
+
+          win.forEach(function (r) {
+            var s = r.details && r.details.wait && r.details.wait.stats ? r.details.wait.stats : null;
+            if (s) {
+              meanData.push(s.mean != null ? s.mean / 60 : null);
+              q1Data.push(s.q1 != null ? s.q1 / 60 : null);
+              medData.push(s.median != null ? s.median / 60 : null);
+              q3Data.push(s.q3 != null ? s.q3 / 60 : null);
+            } else {
+              meanData.push(null); q1Data.push(null); medData.push(null); q3Data.push(null);
+            }
+          });
+        }
+        else {
+          var sourceArr = type === 'ext-bed' ? extData.bed : extData.icu;
+          if (type === 'ext-bed') {
+            title = '平均待ベッド分析 (OA/PA)'; sub = '28-DAY ROLLING BED WAIT STATS TREND';
+            pointBgColor = '#ffb547';
+          } else {
+            title = '平均ICU待ベッド分析 (OACU/PACU)'; sub = '28-DAY ROLLING ICU WAIT STATS TREND';
+            pointBgColor = '#ff3b4a';
+          }
+
+          latestStats = getExtStats(sourceArr, new Date(L.ts).getTime());
+
+          win.forEach(function (r) {
+            var t = new Date(r.ts).getTime();
+            var s = getExtStats(sourceArr, t);
+            meanData.push(s.mean != null ? s.mean / 60 : null);
+            q1Data.push(s.q1 != null ? s.q1 / 60 : null);
+            medData.push(s.median != null ? s.median / 60 : null);
+            q3Data.push(s.q3 != null ? s.q3 / 60 : null);
+          });
+        }
+
+        html = '<h2>' + title + '</h2><div class="sub">' + sub + '</div>';
+
+        html += '<div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">';
+        html += '<div class="card" style="flex:1; min-width:80px; text-align:center;"><div class="card-title">平均数 (Mean)</div><div class="num mono" style="color:var(--cyan); font-size:24px; margin-top:4px;">' + formatHM(latestStats.mean) + '</div></div>';
+        html += '<div class="card" style="flex:1; min-width:80px; text-align:center;"><div class="card-title">25% (Q1)</div><div class="num mono" style="color:var(--text); font-size:24px; margin-top:4px;">' + formatHM(latestStats.q1) + '</div></div>';
+        html += '<div class="card" style="flex:1; min-width:80px; text-align:center;"><div class="card-title">中位数 (Median)</div><div class="num mono" style="color:var(--amber); font-size:24px; margin-top:4px;">' + formatHM(latestStats.median) + '</div></div>';
+        html += '<div class="card" style="flex:1; min-width:80px; text-align:center;"><div class="card-title">75% (Q3)</div><div class="num mono" style="color:var(--red); font-size:24px; margin-top:4px;">' + formatHM(latestStats.q3) + '</div></div>';
+        html += '</div>';
+
+        html += '<div class="range-slider" style="margin-bottom:12px; display:inline-flex"><span class="label">期間</span><input type="range" min="0" max="5" value="' + currentTimeOpt + '" oninput="document.getElementById(\'m-time-val\').textContent=TIME_OPTS[this.value].l" onchange="changeTimeRange(this.value)"><span class="val" id="m-time-val">' + TIME_OPTS[currentTimeOpt].l + '</span></div>';
+        html += '<div class="modal-chart-wrap large"><canvas id="modal-chart"></canvas></div>';
+
+        body.innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('open');
+
+        datasets.push({ label: '平均数', data: meanData, borderColor: '#4fd1ff', backgroundColor: 'transparent', borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, fill: false, spanGaps: true });
+        datasets.push({ label: 'Q1 (25%)', data: q1Data, borderColor: 'rgba(255,255,255,0.4)', backgroundColor: 'transparent', borderWidth: 1.2, borderDash: [2, 2], pointRadius: 0, fill: false, spanGaps: true });
+        datasets.push({ label: '中位数', data: medData, borderColor: pointBgColor, backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 0, fill: false, spanGaps: true });
+        datasets.push({ label: 'Q3 (75%)', data: q3Data, borderColor: 'rgba(255,255,255,0.4)', backgroundColor: 'transparent', borderWidth: 1.2, borderDash: [2, 2], pointRadius: 0, fill: false, spanGaps: true });
+
+        setTimeout(function () {
+          new Chart(document.getElementById('modal-chart'), {
+            type: 'line',
+            data: { labels: lb, datasets: datasets },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: { display: true, labels: { color: '#e7eef7', boxWidth: 12, font: { size: 12 } } },
+                tooltip: {
+                  backgroundColor: '#0e141d', borderColor: '#2a3d56', borderWidth: 1, padding: 10,
+                  callbacks: {
+                    label: function (ctx) {
+                      var m = Math.round(ctx.raw * 60);
+                      return ctx.dataset.label + ': ' + formatHM(m);
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 15 } },
+                y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true, title: { display: true, text: '等待時間数', color: '#6b7c93' } }
+              }
+            }
+          });
+        }, 100);
+        return;
+      }
+
+      if (type === 'total') {
+        html = '<h2>トリアージ分布</h2><div class="sub">TRIAGE DISTRIBUTION · N=' + L.total + '</div>';
+        html += '<div class="modal-chart-wrap donut"><canvas id="modal-triage-chart"></canvas></div><div class="legend" id="modal-legend" style="margin-top:20px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap"></div>';
+
+        html += '<h2 style="margin-top:32px">未診(未診)数トレンド</h2><div class="sub">UNSEEN PATIENTS TREND</div>';
+        html += '<div class="range-slider" style="margin-bottom:12px; display:inline-flex"><span class="label">期間</span><input type="range" min="0" max="5" value="' + currentTimeOpt + '" oninput="document.getElementById(\'m-time-val\').textContent=TIME_OPTS[this.value].l" onchange="changeTimeRange(this.value)"><span class="val" id="m-time-val">' + TIME_OPTS[currentTimeOpt].l + '</span></div>';
+        html += '<div class="modal-chart-wrap large"><canvas id="modal-unseen-chart"></canvas></div>';
+
+        body.innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('open');
+
+        setTimeout(function () {
+          new Chart(document.getElementById('modal-triage-chart'), {
+            type: 'doughnut',
+            data: { labels: ['L1', 'L2', 'L3', 'L4', 'L5'], datasets: [{ data: [L.l1, L.l2, L.l3, L.l4, L.l5], backgroundColor: ['#ff3b4a', '#ffb547', '#4fd1ff', '#4ade80', '#a78bfa'], borderColor: '#0e141d', borderWidth: 2, hoverOffset: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+          });
+          var pct = function (v) { return L.total ? Math.round(v / L.total * 100) : 0 };
+          document.getElementById('modal-legend').innerHTML = [{ c: '#ff3b4a', l: 'L1', v: L.l1 }, { c: '#ffb547', l: 'L2', v: L.l2 }, { c: '#4fd1ff', l: 'L3', v: L.l3 }, { c: '#4ade80', l: 'L4', v: L.l4 }, { c: '#a78bfa', l: 'L5', v: L.l5 }].map(function (x) { return '<div class="row" style="color:' + x.c + '"><span class="sw"></span><span class="lab">' + x.l + '</span><span class="v" style="margin-left:4px">' + x.v + ' (' + pct(x.v) + '%)</span></div>' }).join('');
+
+          var win = getFilteredWindow();
+          var lb = getLabels(win);
+          var unseenData = win.map(function (r) { return r.details && r.details.unseen != null ? r.details.unseen : 0; });
+
+          new Chart(document.getElementById('modal-unseen-chart'), {
+            type: 'line',
+            data: {
+              labels: lb,
+              datasets: [{
+                label: '未診(未診)数',
+                data: unseenData,
+                borderColor: '#ff5db1',
+                backgroundColor: 'rgba(255,93,177,0.05)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: 0,
+                borderWidth: 2,
+                spanGaps: true
+              }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+              plugins: { legend: { display: true, labels: { color: '#e7eef7', boxWidth: 12, font: { size: 12 } } } },
+              scales: { x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 15 } }, y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true } }
+            }
+          });
+        }, 100);
+      }
+      else if (type === 'area') {
+        var a = d.area || {};
+        html = '<h2>エリア分布</h2><div class="sub">AREA DISTRIBUTION</div><div class="metric-rows">';
+        html += modalBar('蘇生室', a.resus, L.total, 'var(--red)'); html += modalBar('A ゾーン', a.zoneA, L.total, '#6ee7ff');
+        html += modalBar('B ゾーン', a.zoneB, L.total, '#60a5fa'); html += modalBar('観察區', a.obs, L.total, 'var(--amber)');
+        html += modalBar('小小児科', a.peds, L.total, 'var(--green)'); html += modalBar('産婦科', a.obgyn, L.total, 'var(--pink)');
+        html += '</div><div class="modal-chart-wrap donut"><canvas id="modal-chart"></canvas></div>';
+        setTimeout(function () { new Chart(document.getElementById('modal-chart'), { type: 'doughnut', data: { labels: ['蘇生室', 'A ゾーン', 'B ゾーン', '観察', '小児科', '産婦科'], datasets: [{ data: [a.resus || 0, a.zoneA || 0, a.zoneB || 0, a.obs || 0, a.peds || 0, a.obgyn || 0], backgroundColor: ['#ff3b4a', '#6ee7ff', '#60a5fa', '#ffb547', '#4ade80', '#ff5db1'], borderColor: '#0e141d', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: true, position: 'bottom', labels: { color: '#e7eef7', font: { size: 12 } } } } } }) }, 100);
+      }
+      else if (type === 'stay') {
+        var s = d.stay || {}, sm = Math.max(s.gt6 || 0, 1);
+        html = '<h2>滞在時間</h2><div class="sub">STAY · 重複カウントあり</div><div class="metric-rows">';
+        html += modalBar('>6h', s.gt6, sm, 'var(--green)'); html += modalBar('>12h', s.gt12, sm, 'var(--amber)');
+        html += modalBar('>24h', s.gt24, sm, 'var(--amber)'); html += modalBar('>48h', s.gt48, sm, 'var(--red)'); html += modalBar('>72h', s.gt72, sm, 'var(--red)');
+        html += '</div><div style="margin-top:16px; display:flex; justify-content:flex-end"><div class="range-slider" style="margin:0"><span class="label">期間</span><input type="range" min="0" max="5" value="' + currentTimeOpt + '" oninput="document.getElementById(\'m-time-val\').textContent=TIME_OPTS[this.value].l" onchange="changeTimeRange(this.value)"><span class="val" id="m-time-val">' + TIME_OPTS[currentTimeOpt].l + '</span></div></div>';
+        html += '<div class="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>';
+        setTimeout(function () {
+          var win = getFilteredWindow();
+          var lb = getLabels(win);
+          new Chart(document.getElementById('modal-chart'), { type: 'line', data: { labels: lb, datasets: [{ label: '>24h', data: win.map(function (r) { return r.details && r.details.stay ? r.details.stay.gt24 || 0 : 0 }), borderColor: '#ffb547', fill: false, tension: .3, pointRadius: 0, borderWidth: 1.5 }, { label: '>48h', data: win.map(function (r) { return r.details && r.details.stay ? r.details.stay.gt48 || 0 : 0 }), borderColor: '#ff3b4a', fill: false, tension: .3, pointRadius: 0, borderWidth: 1.5 }, { label: '>72h', data: win.map(function (r) { return r.details && r.details.stay ? r.details.stay.gt72 || 0 : 0 }), borderColor: '#a78bfa', fill: false, tension: .3, pointRadius: 0, borderWidth: 1.5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#e7eef7', font: { size: 12 } } } }, scales: { x: { grid: { color: 'rgba(79,209,255,.05)' }, ticks: { maxTicksLimit: 6 } }, y: { grid: { color: 'rgba(79,209,255,.05)' }, beginAtZero: true } } } })
+        }, 100);
+      }
+      else if (type === 'dispratio') {
+        var ds = d.disp || {}, r = d.ratio || {}, na = d.nurseAlloc || {};
+        html = '<h2>動向</h2><div class="sub">DISPOSITION</div><div class="metric-rows">';
+        html += modalBar('動向なし', ds.noDisp, L.total, 'var(--amber)'); html += modalBar('動向あり', ds.hasDisp, L.total, 'var(--cyan)'); html += '</div>';
+        html += '<h2 style="margin-top:20px">看護師対患者比</h2><div class="sub">NURSE-PATIENT RATIO</div><div class="metric-rows">';
+        var rm = Math.max(r.total || 0, r.clinicER || 0, r.ab || 0, r.zoneA || 0, r.zoneB || 0, r.resus || 0, r.obs || 0, r.peds || 0, 1);
+        html += ratioBar('合計', r.total, rm, '#ffffff'); html += ratioBar('診察室(蘇生含)', r.clinicER, rm, '#ffb547'); html += ratioBar('A/B ゾーン', r.ab, rm, '#ffd88f');
+        html += ratioBar('A ゾーン', r.zoneA, rm, '#6ee7ff'); html += ratioBar('B ゾーン', r.zoneB, rm, '#60a5fa'); html += ratioBar('蘇生室', r.resus, rm, '#ff3b4a');
+        html += ratioBar('観察', r.obs, rm, '#ff5db1'); html += ratioBar('小児科', r.peds, rm, '#4ade80');
+        html += ratioBar('動向なし', r.noDisp, rm, '#a78bfa'); html += ratioBar('動向あり', r.hasDisp, rm, '#fb923c'); html += '</div>';
+
+        var painIdx = computePainIndex(L);
+        var pcolor = 'var(--green)';
+        if (painIdx.score >= 100) pcolor = 'var(--violet)';
+        else if (painIdx.score >= 70) pcolor = 'var(--red)';
+        else if (painIdx.score >= 40) pcolor = 'var(--amber)';
+
+        html += '<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px"><h2>ペインインデックス分析</h2><div class="sub">PAIN INDEX BREAKDOWN</div>';
+        html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:36px;color:' + pcolor + ';line-height:1;margin-bottom:8px;">' + painIdx.score + '</div>';
+        html += '<div class="metric-rows">';
+        html += '<div class="metric-row"><span class="label">環境ストレス</span><span class="val" style="color:var(--red)">+' + painIdx.env + '</span><div class="hbar"><i style="width:' + Math.min(100, painIdx.env / 2) + '% ;background:var(--red)"></i></div></div>';
+
+        if (painIdx.team >= 0) {
+          html += '<div class="metric-row"><span class="label">チーム軽減</span><span class="val" style="color:var(--cyan)">-' + painIdx.team + '</span><div class="hbar"><i style="width:' + Math.min(100, painIdx.team / 2) + '% ;background:var(--cyan)"></i></div></div>';
+        } else {
+          html += '<div class="metric-row"><span class="label">チームストレス</span><span class="val" style="color:var(--amber)">+' + (-painIdx.team) + '</span><div class="hbar"><i style="width:' + Math.min(100, (-painIdx.team) / 2) + '% ;background:var(--amber)"></i></div></div>';
+        }
+
+        html += '</div></div>';
+      }
+      else if (type === 'staff') {
+        var st = d.staff || {};
+        html = '<h2>員配置</h2><div class="sub">ON-DUTY STAFFING</div><div class="staff-grid" style="margin-top:16px">';
+        html += staffRow('研修医', st.resident); html += staffRow('主治医', st.attending); html += staffRow('シニア主治医', st.seniorAttending); html += staffRow('専攻医', st.seniorResident);
+        html += staffRow('看護師', st.nurse != null ? st.nurse : null); html += staffRow('NP', st.np);
+        html += '</div><div class="staff-grid" style="margin-top:10px"><div class="staff-item" style="grid-column:span 2"><span class="slabel">小児救急は救急医か</span><span class="sval ' + (st.pedsIsER == null ? 'empty' : '') + '">' + (st.pedsIsER || '--') + '</span></div></div>';
+        html += '<p style="font-size:var(--fs-sub);color:var(--muted);margin-top:16px;border-top:1px solid var(--border);padding-top:12px">📅 班表已匯入。</p>';
+      }
+      else if (type === 'nurseAlloc') {
+        var na = d.nurseAlloc || {};
+        html = '<h2>看護師力分配</h2><div class="sub">NURSE ALLOCATION · ' + (na.isNight ? '夜勤' : '日/夕勤') + '</div><div class="metric-rows">';
+        var nm = na.total || 1;
+        html += naModalBar('合計看護師', na.total, nm, '#4fd1ff'); html += naModalBar('トリアージ', na.triage, nm, '#94a3b8'); html += naModalBar('観察', na.obs, nm, '#ff5db1');
+        html += naModalBar('小児科', na.peds, nm, '#4ade80'); html += naModalBar('蘇生室', na.resus, nm, '#ff3b4a'); html += naModalBar('診察室(A+B)', na.clinic, nm, '#ffb547');
+        html += naModalBar('　A ゾーン', na.zoneA, nm, '#6ee7ff'); html += naModalBar('　B ゾーン', na.zoneB, nm, '#60a5fa'); html += '</div>';
+      }
+
+      body.innerHTML = html;
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal() { document.getElementById('modal-overlay').classList.remove('open') }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal() });
+
+    function modalBar(l, v, max, c) { v = v || 0; return '<div class="metric-row"><span class="label">' + l + '</span><span class="val" style="color:' + c + '">' + v + '</span><div class="hbar"><i style="width:' + (max ? Math.round(v / max * 100) : 0) + '%;background:' + c + '"></i></div></div>' }
+    function ratioBar(l, v, max, c) { if (v == null) return '<div class="metric-row"><span class="label">' + l + '</span><span class="val" style="color:var(--dim)">N/A</span><div class="hbar"></div></div>'; return '<div class="metric-row"><span class="label">' + l + '</span><span class="val" style="color:' + c + '">' + v.toFixed(2) + '</span><div class="hbar"><i style="width:' + (max > 0 ? Math.round(v / max * 100) : 0) + '%;background:' + c + '"></i></div></div>' }
+    function naModalBar(l, v, max, c) { if (v == null) return '<div class="metric-row"><span class="label">' + l + '</span><span class="val" style="color:var(--dim)">--</span><div class="hbar"></div></div>'; var s = (v % 1 === 0) ? v : v.toFixed(1); return '<div class="metric-row"><span class="label">' + l + '</span><span class="val" style="color:' + c + '">' + s + '</span><div class="hbar"><i style="width:' + (max > 0 ? Math.round(v / max * 100) : 0) + '%;background:' + c + '"></i></div></div>' }
+    function staffRow(l, v) { var cls = v != null ? '' : 'empty'; return '<div class="staff-item"><span class="slabel">' + l + '</span><span class="sval ' + cls + '">' + (v != null ? v : '--') + '</span></div>' }
+
+
+    function switchLang(lang) {
+      document.body.style.opacity = '0.5';
+      google.script.run.withSuccessHandler(function (url) {
+        window.top.location.href = url + (lang ? '?lang=' + lang : '');
+      }).getScriptUrl();
+    }
+
+    function tick() {
+      var d = new Date(); document.getElementById('clock').textContent = d.toTimeString().slice(0, 8) + ' ' + ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
+    }
+    setInterval(tick, 1000); tick();
+
+    initCharts(); load(); setInterval(load, 5 * 60 * 1000);
+  </script>
+</body>
+
+</html>

@@ -9,5 +9,5 @@
 * **Serial Number (就醫序號):** E26042100001 (ER + Date + No.)
 * **Department (科別):** 急診內科, 外科, 小兒科, 婦產科
 * **ER Bed (床位):** A01, B01, C柱下...
-* **Nursing End Time (護理結束時間):** MM-dd hh:mm
+* **Nursing End Time (護理結束時間):** MM/dd hh:mm
 * **Disposition (動向):** OBS, OA, PA, OACU, PACU, EXP, MBD, AAD, T, AADT, DDT...
